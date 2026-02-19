@@ -1,29 +1,76 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Global Page Style -->
+    <Style TargetType="ContentPage">
+        <Setter Property="BackgroundColor" Value="{StaticResource WoWDarkBackground}" />
+    </Style>
+
+    <!-- Global Label Style -->
     <Style TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Gray900}" />
+        <Setter Property="TextColor" Value="{StaticResource WoWTextLight}" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style x:Key="Headline" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource WoWGold}" />
+        <Setter Property="FontFamily" Value="LifeCraft" />
+        <Setter Property="FontSize" Value="32" />
+        <Setter Property="FontAttributes" Value="Bold" />
     </Style>
 
     <Style x:Key="SubHeadline" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Gray900}" />
-        <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="20" />
+        <Setter Property="TextColor" Value="{StaticResource WoWGoldDim}" />
+        <Setter Property="FontFamily" Value="LifeCraft" />
+        <Setter Property="FontSize" Value="24" />
     </Style>
 
     <Style x:Key="Body" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Gray500}" />
+        <Setter Property="TextColor" Value="{StaticResource WoWTextLight}" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
     </Style>
 
+    <!-- WoW Button Style -->
     <Style TargetType="Button">
-        <Setter Property="TextColor" Value="White" />
-        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-        <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{StaticResource WoWTextDark}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource WoWGold}" />
+        <Setter Property="FontFamily" Value="LifeCraft" />
+        <Setter Property="FontSize" Value="18" />
         <Setter Property="Padding" Value="14,10" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="BorderColor" Value="{StaticResource WoWGoldDim}" />
+        <Setter Property="BorderWidth" Value="2" />
     </Style>
+
+    <!-- WoW Panel (Frame/Border) -->
+    <Style x:Key="WoWPanel" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource WoWPanelBackground}" />
+        <Setter Property="Stroke" Value="{StaticResource WoWBorder}" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 8" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+
+    <!-- Legacy Frame support just in case -->
+    <Style TargetType="Frame">
+         <Setter Property="BackgroundColor" Value="{StaticResource WoWPanelBackground}" />
+         <Setter Property="BorderColor" Value="{StaticResource WoWBorder}" />
+         <Setter Property="CornerRadius" Value="8" />
+    </Style>
+
+    <Style TargetType="Shell">
+        <Setter Property="Shell.BackgroundColor" Value="{StaticResource WoWPanelBackground}" />
+        <Setter Property="Shell.ForegroundColor" Value="{StaticResource WoWGold}" />
+        <Setter Property="Shell.TitleColor" Value="{StaticResource WoWGold}" />
+        <Setter Property="Shell.DisabledColor" Value="{StaticResource Gray500}" />
+        <Setter Property="Shell.UnselectedColor" Value="{StaticResource Gray400}" />
+        <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource WoWPanelBackground}" />
+        <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource WoWGold}" />
+        <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource WoWGold}" />
+        <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource Gray400}" />
+    </Style>
+
 </ResourceDictionary>

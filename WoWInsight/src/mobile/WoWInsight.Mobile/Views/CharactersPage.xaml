@@ -4,28 +4,37 @@
              xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels"
              xmlns:models="clr-namespace:WoWInsight.Mobile.Models"
              x:Class="WoWInsight.Mobile.Views.CharactersPage"
-             Title="Characters">
+             Title="Characters"
+             BackgroundColor="{StaticResource WoWDarkBackground}">
 
     <Grid>
-        <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}" IsEnabled="True">
+        <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}" IsEnabled="True" RefreshColor="{StaticResource WoWGold}">
             <CollectionView ItemsSource="{Binding Characters}"
                             SelectionMode="Single"
                             SelectionChangedCommand="{Binding GoToDetailCommand}"
                             SelectionChangedCommandParameter="{Binding Source={RelativeSource Self}, Path=SelectedItem}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:Character">
-                        <Grid Padding="15" ColumnDefinitions="*, Auto">
-                            <VerticalStackLayout Grid.Column="0" Spacing="5">
-                                <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" />
+                        <Grid Padding="15" ColumnDefinitions="Auto, *, Auto">
+                            <Image Grid.Column="0" Source="icon_char.svg" WidthRequest="40" HeightRequest="40" VerticalOptions="Center" Margin="0,0,15,0"/>
+
+                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                <Label Text="{Binding Name}" Style="{StaticResource Headline}" FontSize="22" />
                                 <HorizontalStackLayout Spacing="5">
-                                    <Label Text="{Binding Realm}" TextColor="Gray" />
-                                    <Label Text="-" TextColor="Gray" />
-                                    <Label Text="{Binding Class}" TextColor="Gray" />
-                                    <Label Text="-" TextColor="Gray" />
-                                    <Label Text="{Binding Level}" TextColor="Gray" />
+                                    <Label Text="{Binding Level}" TextColor="{StaticResource WoWGold}" FontAttributes="Bold" />
+                                    <Label Text="{Binding Class}" TextColor="{StaticResource WoWTextLight}" />
+                                    <Label Text="-" TextColor="{StaticResource Gray400}" />
+                                    <Label Text="{Binding Realm}" TextColor="{StaticResource Gray400}" />
                                 </HorizontalStackLayout>
                             </VerticalStackLayout>
-                            <Label Grid.Column="1" Text="{Binding Region}" VerticalOptions="Center" FontSize="16" />
+
+                            <Label Grid.Column="2" Text="{Binding Region}"
+                                   TextColor="{StaticResource Gray500}"
+                                   VerticalOptions="Center"
+                                   FontSize="14"
+                                   FontAttributes="Bold" />
+
+                            <BoxView Grid.ColumnSpan="3" HeightRequest="1" Color="{StaticResource WoWBorder}" VerticalOptions="End" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
@@ -36,6 +45,6 @@
                            IsVisible="{Binding IsBusy}"
                            HorizontalOptions="Center"
                            VerticalOptions="Center"
-                           Color="{StaticResource Primary}" />
+                           Color="{StaticResource WoWGold}" />
     </Grid>
 </ContentPage>
