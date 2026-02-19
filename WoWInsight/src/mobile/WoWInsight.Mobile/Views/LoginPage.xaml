@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels"
+             x:Class="WoWInsight.Mobile.Views.LoginPage"
+             Title="Login">
+
+    <VerticalStackLayout Spacing="25" Padding="30" VerticalOptions="Center">
+        <Image Source="dotnet_bot.svg"
+               HeightRequest="200"
+               HorizontalOptions="Center" />
+
+        <Label Text="Welcome to WoWInsight"
+               Style="{StaticResource SubHeadline}"
+               HorizontalOptions="Center" />
+
+        <Label Text="Your companion app for World of Warcraft"
+               Style="{StaticResource Body}"
+               HorizontalOptions="Center" />
+
+        <Button Text="Login with Battle.net"
+                Command="{Binding LoginCommand}"
+                HorizontalOptions="Center" />
+
+    </VerticalStackLayout>
+</ContentPage>

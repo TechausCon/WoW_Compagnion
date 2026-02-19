@@ -1,0 +1,6 @@
+@WoWInsight.Api_HostAddress = http://localhost:5215
+
+GET {{WoWInsight.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

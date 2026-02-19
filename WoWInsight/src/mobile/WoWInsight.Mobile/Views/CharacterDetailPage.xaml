@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels"
+             xmlns:dto="clr-namespace:WoWInsight.Mobile.DTOs"
+             x:Class="WoWInsight.Mobile.Views.CharacterDetailPage"
+             Title="{Binding Character.Name}">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Spacing="20" Padding="15">
+                <!-- Overview -->
+                <Frame Padding="15" BackgroundColor="{StaticResource SecondaryBrush}">
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Overview" FontSize="20" FontAttributes="Bold" />
+                        <Label Text="{Binding Character.Realm, StringFormat='Realm: {0}'}" />
+                        <Label Text="{Binding Character.Region, StringFormat='Region: {0}'}" />
+                        <Label Text="{Binding Character.Class, StringFormat='Class: {0}'}" />
+                        <Label Text="{Binding Character.Level, StringFormat='Level: {0}'}" />
+                        <Label Text="{Binding Character.Faction, StringFormat='Faction: {0}'}" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Mythic+ Summary -->
+                <Label Text="Mythic+" FontSize="22" FontAttributes="Bold" />
+
+                <Frame Padding="15">
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Total Score:" FontAttributes="Bold" />
+                        <Label Text="{Binding Summary.TotalScore}" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                    </HorizontalStackLayout>
+                </Frame>
+
+                <Label Text="Best Runs" FontSize="18" FontAttributes="Bold" Margin="0,10,0,0" />
+                <CollectionView ItemsSource="{Binding BestRuns}" HeightRequest="200">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="dto:RunDto">
+                            <Grid Padding="5" ColumnDefinitions="*, Auto">
+                                <VerticalStackLayout>
+                                    <Label Text="{Binding Dungeon}" FontAttributes="Bold" />
+                                    <Label Text="{Binding Level, StringFormat='Level {0}'}" TextColor="Gray" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="{Binding Score, StringFormat='{0:F1}'}" VerticalOptions="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Label Text="Recent Runs" FontSize="18" FontAttributes="Bold" Margin="0,10,0,0" />
+                <CollectionView ItemsSource="{Binding RecentRuns}" HeightRequest="200">
+                     <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="dto:RunDto">
+                            <Grid Padding="5" ColumnDefinitions="*, Auto">
+                                <VerticalStackLayout>
+                                    <Label Text="{Binding Dungeon}" FontAttributes="Bold" />
+                                    <Label Text="{Binding Level, StringFormat='Level {0}'}" TextColor="Gray" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="{Binding Score, StringFormat='{0:F1}'}" VerticalOptions="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

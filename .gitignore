@@ -1,0 +1,11 @@
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.lock.json
+project.assets.json
+.idea/
+*.db-shm
+*.db-wal
+keys/
