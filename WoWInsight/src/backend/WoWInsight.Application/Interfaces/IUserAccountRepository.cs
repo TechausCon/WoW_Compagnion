@@ -11,4 +11,5 @@ public interface IUserAccountRepository
     Task AddAsync(UserAccount userAccount);
     Task UpdateAsync(UserAccount userAccount);
     Task<UserAccount?> GetBySubAsync(string sub);
+    Task<UserAccount?> GetByBackendRefreshTokenAsync(string token);
 }

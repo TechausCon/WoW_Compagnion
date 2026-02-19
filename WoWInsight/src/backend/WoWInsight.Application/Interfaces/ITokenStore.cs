@@ -8,7 +8,7 @@ namespace WoWInsight.Application.Interfaces;
 public interface ITokenStore
 {
     Task StoreTokenAsync(Guid userAccountId, string accessToken, string refreshToken, DateTimeOffset expiresAt, DateTimeOffset? refreshExpiresAt);
-    Task<(string AccessToken, string RefreshToken)> GetTokenAsync(Guid userAccountId);
+    Task<(string AccessToken, string RefreshToken, DateTimeOffset ExpiresAt)> GetTokenAsync(Guid userAccountId);
     Task DeleteTokenAsync(Guid userAccountId);
 
     // For PKCE

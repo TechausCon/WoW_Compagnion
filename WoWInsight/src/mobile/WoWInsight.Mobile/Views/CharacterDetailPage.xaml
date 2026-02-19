@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels"
-             xmlns:dto="clr-namespace:WoWInsight.Mobile.DTOs"
+             xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels;assembly=WoWInsight.Mobile.Core"
+             xmlns:dto="clr-namespace:WoWInsight.Mobile.DTOs;assembly=WoWInsight.Mobile.Core"
+             xmlns:converters="clr-namespace:WoWInsight.Mobile.Converters"
              x:Class="WoWInsight.Mobile.Views.CharacterDetailPage"
              Title="{Binding Character.Name}"
              BackgroundColor="{StaticResource WoWDarkBackground}">
 
     <ContentPage.Resources>
         <ResourceDictionary>
+            <converters:BoolToStringConverter x:Key="BoolToStringConverter" />
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
             <Style TargetType="Label" x:Key="StatLabel">
                 <Setter Property="TextColor" Value="{StaticResource WoWTextLight}" />
                 <Setter Property="FontSize" Value="14" />
@@ -68,9 +71,17 @@
                                 <Grid ColumnDefinitions="*, Auto">
                                     <VerticalStackLayout Spacing="2">
                                         <Label Text="{Binding Dungeon}" TextColor="{StaticResource WoWTextLight}" FontAttributes="Bold" />
-                                        <Label Text="{Binding Level, StringFormat='Level {0}'}" TextColor="{StaticResource WoWGoldDim}" FontSize="12" />
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Label Text="{Binding Level, StringFormat='Level {0}'}" TextColor="{StaticResource WoWGoldDim}" FontSize="12" />
+                                            <Label Text="{Binding Timed, Converter={StaticResource BoolToStringConverter}, ConverterParameter='(Timed)|(Over)'}"
+                                                   TextColor="{Binding Timed, Converter={StaticResource BoolToColorConverter}, ConverterParameter='Green|Red'}"
+                                                   FontSize="12" />
+                                        </HorizontalStackLayout>
                                     </VerticalStackLayout>
-                                    <Label Grid.Column="1" Text="{Binding Score, StringFormat='{0:F1}'}" TextColor="{StaticResource WoWTextLight}" VerticalOptions="Center" FontAttributes="Bold"/>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="End">
+                                        <Label Text="{Binding Score, StringFormat='{0:F1}'}" TextColor="{StaticResource WoWTextLight}" FontAttributes="Bold" HorizontalOptions="End"/>
+                                        <Label Text="{Binding CompletedAt, StringFormat='{0:MMM dd}'}" TextColor="{StaticResource Gray500}" FontSize="10" HorizontalOptions="End"/>
+                                    </VerticalStackLayout>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -86,9 +97,17 @@
                                 <Grid ColumnDefinitions="*, Auto">
                                     <VerticalStackLayout Spacing="2">
                                         <Label Text="{Binding Dungeon}" TextColor="{StaticResource WoWTextLight}" FontAttributes="Bold" />
-                                        <Label Text="{Binding Level, StringFormat='Level {0}'}" TextColor="{StaticResource WoWGoldDim}" FontSize="12" />
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Label Text="{Binding Level, StringFormat='Level {0}'}" TextColor="{StaticResource WoWGoldDim}" FontSize="12" />
+                                            <Label Text="{Binding Timed, Converter={StaticResource BoolToStringConverter}, ConverterParameter='(Timed)|(Over)'}"
+                                                   TextColor="{Binding Timed, Converter={StaticResource BoolToColorConverter}, ConverterParameter='Green|Red'}"
+                                                   FontSize="12" />
+                                        </HorizontalStackLayout>
                                     </VerticalStackLayout>
-                                    <Label Grid.Column="1" Text="{Binding Score, StringFormat='{0:F1}'}" TextColor="{StaticResource WoWTextLight}" VerticalOptions="Center" FontAttributes="Bold"/>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="End">
+                                        <Label Text="{Binding Score, StringFormat='{0:F1}'}" TextColor="{StaticResource WoWTextLight}" FontAttributes="Bold" HorizontalOptions="End"/>
+                                        <Label Text="{Binding CompletedAt, StringFormat='{0:MMM dd}'}" TextColor="{StaticResource Gray500}" FontSize="10" HorizontalOptions="End"/>
+                                    </VerticalStackLayout>
                                 </Grid>
                             </Border>
                         </DataTemplate>

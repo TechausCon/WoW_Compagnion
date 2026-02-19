@@ -21,10 +21,8 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<UserAccount>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Sub).IsUnique(); // Sub is unique per region, but assume global unique ID from Blizzard or pair with region?
-            // Blizzard 'sub' (Account ID) is unique globally? Usually yes.
-            // But battle tag is not unique globally?
-            // I'll assume Sub is unique.
+            entity.HasIndex(e => e.Sub).IsUnique();
+            entity.HasIndex(e => e.BackendRefreshToken);
         });
 
         modelBuilder.Entity<OAuthToken>(entity =>

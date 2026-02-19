@@ -22,7 +22,7 @@ public class UserAccountRepository : IUserAccountRepository
 
     public async Task<UserAccount?> GetByIdAsync(Guid id)
     {
-        return await _context.UserAccounts.FindAsync(id);
+        return await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task AddAsync(UserAccount userAccount)
@@ -40,5 +40,10 @@ public class UserAccountRepository : IUserAccountRepository
     public async Task<UserAccount?> GetBySubAsync(string sub)
     {
         return await _context.UserAccounts.FirstOrDefaultAsync(u => u.Sub == sub);
+    }
+
+    public async Task<UserAccount?> GetByBackendRefreshTokenAsync(string token)
+    {
+        return await _context.UserAccounts.FirstOrDefaultAsync(u => u.BackendRefreshToken == token);
     }
 }

@@ -24,61 +24,77 @@ public class AuthService : IAuthService
 
     public async Task<string> StartLoginAsync(string region)
     {
-        // Generate PKCE Challenge
         var codeVerifier = GenerateCodeVerifier();
         var codeChallenge = GenerateCodeChallenge(codeVerifier);
         var state = GenerateState();
 
-        // Store PKCE Request
         await _tokenStore.StorePkceRequestAsync(state, codeVerifier, region);
 
-        // Get Authorization URL
         return _blizzardService.GetAuthorizationUrl(region, state, codeChallenge);
     }
 
-    public async Task<string> HandleCallbackAsync(string code, string state)
+    public async Task<(string AccessToken, string RefreshToken)> HandleCallbackAsync(string code, string state)
     {
-        // Validate State
         var pkceRequest = await _tokenStore.GetPkceRequestAsync(state);
         if (pkceRequest == null || pkceRequest.ExpiresAt < DateTimeOffset.UtcNow)
         {
             throw new Exception("Invalid or expired state.");
         }
 
-        // Exchange Code
         var (accessToken, refreshToken, expiresIn, scope) = await _blizzardService.ExchangeCodeForTokenAsync(pkceRequest.Region, code, pkceRequest.CodeVerifier);
-
-        // Get User Profile
         var userProfile = await _blizzardService.GetUserProfileAsync(pkceRequest.Region, accessToken);
 
-        // Upsert User
         var existingUser = await _userAccountRepository.GetBySubAsync(userProfile.Sub);
+        string backendRefreshToken;
+
         if (existingUser != null)
         {
             existingUser.BattleTag = userProfile.BattleTag;
             existingUser.Region = pkceRequest.Region;
+
+            backendRefreshToken = _jwtService.GenerateRefreshToken();
+            existingUser.BackendRefreshToken = backendRefreshToken;
+            existingUser.BackendRefreshTokenExpiry = DateTimeOffset.UtcNow.AddDays(7);
+
             await _userAccountRepository.UpdateAsync(existingUser);
             userProfile = existingUser;
         }
         else
         {
             userProfile.Region = pkceRequest.Region;
+            backendRefreshToken = _jwtService.GenerateRefreshToken();
+            userProfile.BackendRefreshToken = backendRefreshToken;
+            userProfile.BackendRefreshTokenExpiry = DateTimeOffset.UtcNow.AddDays(7);
+
             await _userAccountRepository.AddAsync(userProfile);
         }
 
-        // Store Token Encrypted (via ITokenStore)
         var expiresAt = DateTimeOffset.UtcNow.AddSeconds(expiresIn);
-        // Refresh token expiry not strictly provided by Blizzard OAuth usually, but we can estimate or assume long lived (30 days often).
-        // Actually Blizzard refresh tokens are valid for 30 days if unused, or longer.
         var refreshExpiresAt = DateTimeOffset.UtcNow.AddDays(30);
 
         await _tokenStore.StoreTokenAsync(userProfile.Id, accessToken, refreshToken, expiresAt, refreshExpiresAt);
-
-        // Cleanup PKCE Request
         await _tokenStore.DeletePkceRequestAsync(state);
 
-        // Generate Backend JWT
-        return _jwtService.GenerateToken(userProfile);
+        var backendAccessToken = _jwtService.GenerateToken(userProfile);
+        return (backendAccessToken, backendRefreshToken);
+    }
+
+    public async Task<(string AccessToken, string RefreshToken)> RefreshTokenAsync(string refreshToken)
+    {
+        var user = await _userAccountRepository.GetByBackendRefreshTokenAsync(refreshToken);
+        if (user == null || user.BackendRefreshTokenExpiry < DateTimeOffset.UtcNow)
+        {
+            throw new Exception("Invalid or expired refresh token.");
+        }
+
+        var newAccessToken = _jwtService.GenerateToken(user);
+        var newRefreshToken = _jwtService.GenerateRefreshToken();
+
+        user.BackendRefreshToken = newRefreshToken;
+        user.BackendRefreshTokenExpiry = DateTimeOffset.UtcNow.AddDays(7);
+        await _userAccountRepository.UpdateAsync(user);
+
+        return (newAccessToken, newRefreshToken);
     }
 
     public async Task<UserAccount?> GetUserAsync(Guid userId)
@@ -86,7 +102,6 @@ public class AuthService : IAuthService
         return await _userAccountRepository.GetByIdAsync(userId);
     }
 
-    // Helper Methods
     private string GenerateCodeVerifier()
     {
         var rng = RandomNumberGenerator.Create();
@@ -110,9 +125,9 @@ public class AuthService : IAuthService
     private string Base64UrlEncode(byte[] input)
     {
         var output = Convert.ToBase64String(input);
-        output = output.Split('=')[0]; // Remove any trailing '='s
-        output = output.Replace('+', '-'); // 62nd char of encoding
-        output = output.Replace('/', '_'); // 63rd char of encoding
+        output = output.Split('=')[0];
+        output = output.Replace('+', '-');
+        output = output.Replace('/', '_');
         return output;
     }
 }

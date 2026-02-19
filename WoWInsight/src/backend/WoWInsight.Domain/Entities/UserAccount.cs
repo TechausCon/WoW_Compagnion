@@ -10,6 +10,10 @@ public class UserAccount
     public string Region { get; set; } = "eu";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    // Backend JWT Refresh Token
+    public string BackendRefreshToken { get; set; } = string.Empty;
+    public DateTimeOffset? BackendRefreshTokenExpiry { get; set; }
+
     // Navigation property
     public OAuthToken? Token { get; set; }
 }

@@ -48,6 +48,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ISyncService, SyncService>();
         builder.Services.AddSingleton<IDialogService, DialogService>();
         builder.Services.AddSingleton<INavigationService, NavigationService>();
+        builder.Services.AddSingleton<IBrowserService, BrowserService>();
 
         // ViewModels
         builder.Services.AddTransient<LoginViewModel>();

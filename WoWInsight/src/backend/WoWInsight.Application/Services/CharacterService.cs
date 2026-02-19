@@ -27,27 +27,49 @@ public class CharacterService : ICharacterService
         var user = await _userAccountRepository.GetByIdAsync(userId);
         if (user == null) throw new Exception("User not found.");
 
-        var (accessToken, refreshToken) = await _tokenStore.GetTokenAsync(userId);
+        var (accessToken, refreshToken, expiresAt) = await _tokenStore.GetTokenAsync(userId);
         if (string.IsNullOrEmpty(accessToken)) throw new Exception("No access token found.");
 
-        // We assume token is valid or we should handle refresh here?
-        // Ideally we should check expiry and refresh if needed.
-        // But for this vertical slice, maybe we assume token is valid or handle 401.
-        // The prompt says "App erhält ein Backend-JWT (kurzlebig, z. B. 8h) + Refresh-Mechanik optional."
-        // But the backend uses Blizzard token to call Blizzard API.
-        // Blizzard Access Token expires in 24h usually.
-        // If it expires, we should refresh it.
-        // But `BlizzardService` might handle retry/refresh or `Application` should.
-        // I will keep it simple: call, if fail, try refresh? Or just assume valid.
-        // Given strict MVP, maybe just call.
-        // But prompt says "Tokens (access+refresh) werden serverseitig gespeichert."
-        // So we should use refresh token if access token is expired.
-        // I'll skip complex refresh logic for now to keep it simple, but note it.
-        // Actually, I can check expiry stored in `OAuthToken` via `ITokenStore`?
-        // `GetTokenAsync` returns tokens. It doesn't return expiry.
-        // If `GetTokenAsync` returned expiry, I could check.
+        // Check Expiry (with 5 min buffer)
+        if (DateTimeOffset.UtcNow.AddMinutes(5) >= expiresAt)
+        {
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                // Can't refresh, hope access token still works or let it fail
+            }
+            else
+            {
+                try
+                {
+                    var (newAccess, newRefresh, expiresIn, scope) = await _blizzardService.RefreshTokenAsync(user.Region, refreshToken);
 
-        return await _blizzardService.GetCharactersAsync(user.Region, accessToken);
+                    var newExpiresAt = DateTimeOffset.UtcNow.AddSeconds(expiresIn);
+
+                    await _tokenStore.StoreTokenAsync(userId, newAccess, newRefresh, newExpiresAt, null);
+                    accessToken = newAccess;
+                }
+                catch
+                {
+                    // Refresh failed. Token might be revoked.
+                    // We can proceed to try existing token or throw.
+                    // For now, proceed and let it fail if invalid.
+                }
+            }
+        }
+
+        try
+        {
+            return await _blizzardService.GetCharactersAsync(user.Region, accessToken);
+        }
+        catch (System.Net.Http.HttpRequestException ex) when (ex.Message.Contains("Unauthorized") || ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            // If we got 401 and haven't tried refreshing yet (or refresh failed above), we could try one more time?
+            // But if we already refreshed above, then token is really bad.
+            // If we didn't refresh above (because expiry was far), maybe it was revoked?
+            // Implementing a second retry here is complex without tracking "didRefresh".
+            // Since we check expiry proactively, this should be rare.
+            throw new Exception("Blizzard Session Expired. Please login again.");
+        }
     }
 
     public async Task<MythicPlusSummaryDto> GetMythicPlusSummaryAsync(Guid userId, string characterKey)

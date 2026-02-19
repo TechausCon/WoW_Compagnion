@@ -48,10 +48,6 @@ public class BlizzardService : IBlizzardService
             new("code_verifier", codeVerifier),
             new("client_id", _settings.ClientId),
             new("client_secret", _settings.ClientSecret)
-            // Client Secret IS required for confidential clients (web app). PKCE protects code interception, but secret authenticates the app.
-            // Prompt: "Auth: Battle.net OAuth2 Authorization Code + PKCE, über Backend Token-Broker".
-            // "Keine Secrets in der App. Kein Blizzard Client Secret auf Mobile."
-            // Backend has secret. So we send it.
         };
 
         request.Content = new FormUrlEncodedContent(collection);
@@ -68,6 +64,34 @@ public class BlizzardService : IBlizzardService
         return (accessToken, refreshToken ?? string.Empty, expiresIn, scope);
     }
 
+    public async Task<(string AccessToken, string RefreshToken, int ExpiresIn, string Scope)> RefreshTokenAsync(string region, string refreshToken)
+    {
+        var baseUrl = region.ToLower() == "us" ? "https://us.battle.net" : "https://eu.battle.net";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/oauth/token");
+        var collection = new List<KeyValuePair<string, string>>
+        {
+            new("grant_type", "refresh_token"),
+            new("refresh_token", refreshToken),
+            new("client_id", _settings.ClientId),
+            new("client_secret", _settings.ClientSecret)
+        };
+
+        request.Content = new FormUrlEncodedContent(collection);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var accessToken = json.GetProperty("access_token").GetString() ?? throw new Exception("No access_token");
+        // Sometimes refresh_token is returned again, sometimes not (keeps old one).
+        var newRefreshToken = json.TryGetProperty("refresh_token", out var rt) ? rt.GetString() : refreshToken;
+        var expiresIn = json.GetProperty("expires_in").GetInt32();
+        var scope = json.GetProperty("scope").GetString() ?? string.Empty;
+
+        return (accessToken, newRefreshToken ?? refreshToken, expiresIn, scope);
+    }
+
     public async Task<UserAccount> GetUserProfileAsync(string region, string accessToken)
     {
         var baseUrl = region.ToLower() == "us" ? "https://us.battle.net" : "https://eu.battle.net";
@@ -81,7 +105,7 @@ public class BlizzardService : IBlizzardService
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         var sub = json.GetProperty("sub").GetString() ?? throw new Exception("No sub");
-        var battleTag = json.GetProperty("battletag").GetString() ?? "Unknown"; // Sometimes battletag case differs
+        var battleTag = json.GetProperty("battletag").GetString() ?? "Unknown";
 
         return new UserAccount
         {
@@ -93,16 +117,6 @@ public class BlizzardService : IBlizzardService
 
     public async Task<List<CharacterDto>> GetCharactersAsync(string region, string accessToken)
     {
-        // Cache Key: "characters:{region}:{accessTokenHash}"? No, access token changes.
-        // Cache Key: "characters:{region}:{sub}"? But I don't have sub here easily unless I decoded token or passed it.
-        // Prompt says "Blizzard Char-Liste 5 Minuten (config)".
-        // I should probably cache by Access Token for short term if multiple calls happen, OR better by User ID.
-        // But `GetCharactersAsync` signature takes `accessToken`.
-        // I'll cache by Access Token as key for simplicity in this scope, or just don't cache here and rely on `CharacterService` to cache?
-        // Prompt: "Caching (Backend fest): ... Blizzard Char-Liste 5 Minuten".
-        // If I cache by access token, and token refreshes, cache is lost. That's fine.
-
-        // I will implement caching here.
         var cacheKey = $"chars:{accessToken.GetHashCode()}";
 
         if (_cache.TryGetValue(cacheKey, out List<CharacterDto>? cached))
@@ -111,7 +125,6 @@ public class BlizzardService : IBlizzardService
         }
 
         var baseUrl = region.ToLower() == "us" ? "https://us.api.blizzard.com" : "https://eu.api.blizzard.com";
-        // Namespace: profile-{region}
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/profile/user/wow?namespace=profile-{region}&locale=en_US");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -120,8 +133,10 @@ public class BlizzardService : IBlizzardService
 
         if (!response.IsSuccessStatusCode)
         {
-            // Handle 401 etc.
-            throw new HttpRequestException($"Blizzard API Error: {response.StatusCode}");
+             // If 401, we might throw a specific exception to indicate token issues,
+             // but `CharacterService` will handle refreshing via proactive check or try/catch around this.
+             // We'll just throw generic for now.
+             throw new HttpRequestException($"Blizzard API Error: {response.StatusCode}");
         }
 
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -135,13 +150,10 @@ public class BlizzardService : IBlizzardService
             {
                 foreach (var character in chars.EnumerateArray())
                 {
-                    // Map to DTO
                     var name = character.GetProperty("name").GetString() ?? "";
                     var realm = character.GetProperty("realm").GetProperty("slug").GetString() ?? "";
                     var level = character.GetProperty("level").GetInt32();
                     var playableClass = character.GetProperty("playable_class").GetProperty("name").GetString() ?? "";
-                    // Faction might not be in this summary endpoint directly? It usually is.
-                    // It's in `faction.name`.
                     var faction = character.TryGetProperty("faction", out var f) ? f.GetProperty("name").GetString() ?? "" : "Unknown";
 
                     characters.Add(new CharacterDto
@@ -158,7 +170,7 @@ public class BlizzardService : IBlizzardService
             }
         }
 
-        _cache.Set(cacheKey, characters, TimeSpan.FromMinutes(5)); // Configurable 5 min
+        _cache.Set(cacheKey, characters, TimeSpan.FromMinutes(5));
 
         return characters;
     }

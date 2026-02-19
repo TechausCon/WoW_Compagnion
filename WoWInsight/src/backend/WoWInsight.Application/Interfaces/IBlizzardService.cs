@@ -7,11 +7,9 @@ namespace WoWInsight.Application.Interfaces;
 
 public interface IBlizzardService
 {
-    // Authorization
     string GetAuthorizationUrl(string region, string state, string codeChallenge);
     Task<(string AccessToken, string RefreshToken, int ExpiresIn, string Scope)> ExchangeCodeForTokenAsync(string region, string code, string codeVerifier);
+    Task<(string AccessToken, string RefreshToken, int ExpiresIn, string Scope)> RefreshTokenAsync(string region, string refreshToken);
     Task<UserAccount> GetUserProfileAsync(string region, string accessToken);
-
-    // Characters
     Task<List<CharacterDto>> GetCharactersAsync(string region, string accessToken);
 }

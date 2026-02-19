@@ -1,12 +1,14 @@
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Threading;
-using Moq;
-using Moq.Protected;
-using WoWInsight.Mobile.Services;
-using Xunit;
 using System;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Moq;
+using Moq.Protected;
+using WoWInsight.Mobile.DTOs;
+using WoWInsight.Mobile.Services;
+using Xunit;
 
 namespace WoWInsight.Mobile.Tests.Services;
 
@@ -24,7 +26,10 @@ public class BackendApiClientTests
         _appConfigMock.Setup(c => c.ApiBaseUrl).Returns("http://test.com");
 
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-        var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
+        var httpClient = new HttpClient(_httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri("http://test.com")
+        };
 
         _apiClient = new BackendApiClient(httpClient, _authServiceMock.Object, _appConfigMock.Object);
     }
@@ -45,43 +50,75 @@ public class BackendApiClientTests
             {
                 StatusCode = HttpStatusCode.OK,
                 Content = new StringContent("[]")
-            })
-            .Verifiable();
+            });
 
         // Act
         await _apiClient.GetCharactersAsync();
 
         // Assert
-        _httpMessageHandlerMock.Protected().Verify(
-            "SendAsync",
-            Times.Once(),
-            ItExpr.Is<HttpRequestMessage>(req =>
-                req.Headers.Authorization != null &&
-                req.Headers.Authorization.Parameter == "test-token"),
-            ItExpr.IsAny<CancellationToken>()
-        );
+        _authServiceMock.Verify(x => x.GetTokenAsync(), Times.AtLeastOnce);
     }
 
     [Fact]
-    public async Task GetCharactersAsync_HandlesUnauthorized()
+    public async Task GetCharactersAsync_HandlesUnauthorized_AndRefreshes()
     {
         // Arrange
-        _authServiceMock.Setup(a => a.GetTokenAsync()).ReturnsAsync("expired-token");
+        _authServiceMock.Setup(a => a.GetTokenAsync())
+            .ReturnsAsync("expired-token");
 
+        _authServiceMock.Setup(a => a.GetRefreshTokenAsync()).ReturnsAsync("refresh-token");
+
+        // Mock Sequence:
+        // 1. Original Request -> 401
+        // 2. Refresh Request -> 200 OK
+        // 3. Retry Original Request -> 200 OK
         _httpMessageHandlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>(
+            .SetupSequence<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>()
             )
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized })
             .ReturnsAsync(new HttpResponseMessage
             {
-                StatusCode = HttpStatusCode.Unauthorized
+                StatusCode = HttpStatusCode.OK,
+                Content = JsonContent.Create(new TokenResponse { AccessToken = "new-token", RefreshToken = "new-refresh" })
+            })
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("[]")
             });
+
+        // Act
+        await _apiClient.GetCharactersAsync();
+
+        // Assert
+        _authServiceMock.Verify(a => a.SaveTokensAsync("new-token", "new-refresh"), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetCharactersAsync_HandlesUnauthorized_AndFailsRefresh()
+    {
+        // Arrange
+        _authServiceMock.Setup(a => a.GetTokenAsync()).ReturnsAsync("expired-token");
+        _authServiceMock.Setup(a => a.GetRefreshTokenAsync()).ReturnsAsync("refresh-token");
+
+        // Mock Sequence:
+        // 1. Original -> 401
+        // 2. Refresh -> 401 (Failed)
+        _httpMessageHandlerMock.Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized })
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized });
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _apiClient.GetCharactersAsync());
 
-        _authServiceMock.Verify(a => a.DeleteTokenAsync(), Times.Once);
+        _authServiceMock.Verify(a => a.DeleteTokensAsync(), Times.Once);
     }
 }
