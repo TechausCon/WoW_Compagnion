@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels"
+             xmlns:models="clr-namespace:WoWInsight.Mobile.Models"
+             x:Class="WoWInsight.Mobile.Views.CharactersPage"
+             Title="Characters">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <CollectionView ItemsSource="{Binding Characters}"
+                        SelectionMode="Single"
+                        SelectionChangedCommand="{Binding GoToDetailCommand}"
+                        SelectionChangedCommandParameter="{Binding Source={RelativeSource Self}, Path=SelectedItem}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Character">
+                    <Grid Padding="15" ColumnDefinitions="*, Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                            <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" />
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="{Binding Realm}" TextColor="Gray" />
+                                <Label Text="-" TextColor="Gray" />
+                                <Label Text="{Binding Class}" TextColor="Gray" />
+                                <Label Text="-" TextColor="Gray" />
+                                <Label Text="{Binding Level}" TextColor="Gray" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding Region}" VerticalOptions="Center" FontSize="16" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </RefreshView>
+</ContentPage>
