@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <!-- Dark Blue Background -->
+    <rect width="128" height="128" fill="#1A1A1A" />
+    <path d="M0,0 L128,0 L128,4 L0,4 Z" fill="#FFD100" />
+    <path d="M0,124 L128,124 L128,128 L0,128 Z" fill="#FFD100" />
+    <path d="M0,0 L4,0 L4,128 L0,128 Z" fill="#FFD100" />
+    <path d="M124,0 L128,0 L128,128 L124,128 Z" fill="#FFD100" />
+    <!-- Center W -->
+    <path d="M30,30 L50,100 L64,60 L78,100 L98,30 L88,30 L74,80 L64,40 L54,80 L40,30 Z" fill="#FFD100" />
+</svg>

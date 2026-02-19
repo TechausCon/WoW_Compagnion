@@ -3,31 +3,50 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels"
              x:Class="WoWInsight.Mobile.Views.WeeklyChecklistPage"
-             Title="Weekly Checklist">
+             Title="Weekly Checklist"
+             BackgroundColor="{StaticResource WoWDarkBackground}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style x:Key="ChecklistLabel" TargetType="Label">
+                <Setter Property="TextColor" Value="{StaticResource WoWTextLight}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="VerticalOptions" Value="Center" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <Grid>
-        <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}" RefreshColor="{StaticResource WoWGold}">
             <ScrollView>
                 <VerticalStackLayout Spacing="15" Padding="15" BindableLayout.ItemsSource="{Binding CharacterChecklists}">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate x:DataType="vm:CharacterChecklist">
-                            <Frame Padding="15">
+                            <Border Stroke="{StaticResource WoWGoldDim}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    BackgroundColor="{StaticResource WoWPanelBackground}"
+                                    Padding="15">
                                 <VerticalStackLayout Spacing="10">
-                                    <Label Text="{Binding Character.Name}" FontSize="18" FontAttributes="Bold" />
-                                    <Label Text="{Binding Character.Realm}" TextColor="Gray" />
+                                    <Grid ColumnDefinitions="*, Auto">
+                                        <Label Text="{Binding Character.Name}" Style="{StaticResource Headline}" FontSize="20" />
+                                        <Label Grid.Column="1" Text="{Binding Character.Realm}" TextColor="{StaticResource Gray500}" FontSize="12" VerticalOptions="Center" />
+                                    </Grid>
 
-                                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto, Auto">
-                                        <Label Grid.Row="0" Grid.Column="0" Text="Weekly Chest" VerticalOptions="Center" />
-                                        <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding IsWeeklyChestDone}" />
+                                    <BoxView HeightRequest="1" Color="{StaticResource WoWBorder}" Margin="0,5" />
 
-                                        <Label Grid.Row="1" Grid.Column="0" Text="Raid Clear" VerticalOptions="Center" />
-                                        <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding IsRaidDone}" />
+                                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto, Auto" RowSpacing="10">
+                                        <Label Grid.Row="0" Grid.Column="0" Text="Great Vault" Style="{StaticResource ChecklistLabel}" />
+                                        <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding IsWeeklyChestDone}" Color="{StaticResource WoWGold}" />
 
-                                        <Label Grid.Row="2" Grid.Column="0" Text="World Boss" VerticalOptions="Center" />
-                                        <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding IsWorldBossDone}" />
+                                        <Label Grid.Row="1" Grid.Column="0" Text="Raid Clear" Style="{StaticResource ChecklistLabel}" />
+                                        <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding IsRaidDone}" Color="{StaticResource WoWGold}" />
+
+                                        <Label Grid.Row="2" Grid.Column="0" Text="World Boss" Style="{StaticResource ChecklistLabel}" />
+                                        <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding IsWorldBossDone}" Color="{StaticResource WoWGold}" />
                                     </Grid>
                                 </VerticalStackLayout>
-                            </Frame>
+                            </Border>
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>
                 </VerticalStackLayout>
@@ -38,6 +57,6 @@
                            IsVisible="{Binding IsBusy}"
                            HorizontalOptions="Center"
                            VerticalOptions="Center"
-                           Color="{StaticResource Primary}" />
+                           Color="{StaticResource WoWGold}" />
     </Grid>
 </ContentPage>

@@ -3,24 +3,42 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels"
              x:Class="WoWInsight.Mobile.Views.LoginPage"
-             Title="Login">
+             Title="Login"
+             BackgroundColor="{StaticResource WoWDarkBackground}">
 
-    <VerticalStackLayout Spacing="25" Padding="30" VerticalOptions="Center">
-        <Image Source="dotnet_bot.svg"
-               HeightRequest="200"
-               HorizontalOptions="Center" />
+    <VerticalStackLayout Spacing="30" Padding="30" VerticalOptions="Center">
 
-        <Label Text="Welcome to WoWInsight"
-               Style="{StaticResource SubHeadline}"
-               HorizontalOptions="Center" />
+        <!-- WoW Style Border Container -->
+        <Border Stroke="{StaticResource WoWGold}"
+                StrokeThickness="4"
+                StrokeShape="RoundRectangle 20"
+                BackgroundColor="{StaticResource WoWPanelBackground}"
+                Padding="20"
+                HorizontalOptions="Center"
+                WidthRequest="300">
+            <VerticalStackLayout Spacing="20">
+                <Image Source="appicon.svg"
+                       HeightRequest="100"
+                       WidthRequest="100"
+                       HorizontalOptions="Center" />
 
-        <Label Text="Your companion app for World of Warcraft"
-               Style="{StaticResource Body}"
-               HorizontalOptions="Center" />
+                <Label Text="WoWInsight"
+                       Style="{StaticResource Headline}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
 
-        <Button Text="Login with Battle.net"
-                Command="{Binding LoginCommand}"
-                HorizontalOptions="Center" />
+                <Label Text="Enter the World"
+                       Style="{StaticResource SubHeadline}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+
+                <Button Text="Login with Battle.net"
+                        Command="{Binding LoginCommand}"
+                        HorizontalOptions="Center"
+                        WidthRequest="200"
+                        Margin="0,20,0,0"/>
+            </VerticalStackLayout>
+        </Border>
 
     </VerticalStackLayout>
 </ContentPage>
