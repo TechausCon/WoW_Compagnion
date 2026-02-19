@@ -9,19 +9,47 @@ namespace WoWInsight.Mobile.ViewModels;
 
 public partial class WeeklyChecklistViewModel : ObservableObject
 {
-    private readonly LocalDbService _localDb;
+    private readonly ILocalDbService _localDb;
 
     [ObservableProperty]
     ObservableCollection<CharacterChecklist> characterChecklists = new();
 
-    public WeeklyChecklistViewModel(LocalDbService localDb)
+    [ObservableProperty]
+    bool isBusy;
+
+    [ObservableProperty]
+    bool isRefreshing;
+
+    public WeeklyChecklistViewModel(ILocalDbService localDb)
     {
         _localDb = localDb;
     }
 
     public async Task InitializeAsync()
     {
-        await LoadDataAsync();
+        IsBusy = true;
+        try
+        {
+            await LoadDataAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task RefreshAsync()
+    {
+        IsRefreshing = true;
+        try
+        {
+            await LoadDataAsync();
+        }
+        finally
+        {
+            IsRefreshing = false;
+        }
     }
 
     private async Task LoadDataAsync()
@@ -38,11 +66,11 @@ public partial class WeeklyChecklistViewModel : ObservableObject
 
 public partial class CharacterChecklist : ObservableObject
 {
-    private readonly LocalDbService _localDb;
+    private readonly ILocalDbService _localDb;
     public Character Character { get; }
     public WeeklyChecklist Checklist { get; }
 
-    public CharacterChecklist(Character character, WeeklyChecklist checklist, LocalDbService localDb)
+    public CharacterChecklist(Character character, WeeklyChecklist checklist, ILocalDbService localDb)
     {
         Character = character;
         Checklist = checklist;

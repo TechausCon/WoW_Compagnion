@@ -1,92 +1,98 @@
 using SQLite;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Maui.Storage;
 using System.Threading.Tasks;
+using Microsoft.Maui.Storage;
 using WoWInsight.Mobile.Models;
 
 namespace WoWInsight.Mobile.Services;
 
-public class LocalDbService
+public class LocalDbService : ILocalDbService
 {
-    private SQLiteAsyncConnection _database;
+    private readonly AsyncLazy<SQLiteAsyncConnection> _database;
 
     public LocalDbService()
     {
+        _database = new AsyncLazy<SQLiteAsyncConnection>(async () =>
+        {
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "WoWInsight.db");
+            var db = new SQLiteAsyncConnection(dbPath);
+
+            await db.CreateTableAsync<Character>();
+            await db.CreateTableAsync<MythicPlusSummary>();
+            await db.CreateTableAsync<WeeklyChecklist>();
+
+            return db;
+        });
     }
 
-    private async Task Init()
+    private async Task<SQLiteAsyncConnection> GetConnectionAsync()
     {
-        if (_database != null)
-            return;
-
-        var dbPath = Path.Combine(FileSystem.AppDataDirectory, "WoWInsight.db");
-        _database = new SQLiteAsyncConnection(dbPath);
-
-        await _database.CreateTableAsync<Character>();
-        await _database.CreateTableAsync<MythicPlusSummary>();
-        await _database.CreateTableAsync<WeeklyChecklist>();
+        return await _database.Value;
     }
 
     public async Task<List<Character>> GetCharactersAsync()
     {
-        await Init();
-        return await _database.Table<Character>().ToListAsync();
+        var db = await GetConnectionAsync();
+        return await db.Table<Character>().ToListAsync();
     }
 
     public async Task SaveCharactersAsync(IEnumerable<Character> characters)
     {
-        await Init();
-        // Upsert
-        foreach (var c in characters)
+        var db = await GetConnectionAsync();
+        await db.RunInTransactionAsync(tran =>
         {
-            await _database.InsertOrReplaceAsync(c);
-        }
-        // Should we delete characters not in the list?
-        // For sync, yes. But let's keep it simple: upsert.
-        // If user deletes char on blizzard side, it remains here until we purge.
-        // I'll leave as upsert.
+            foreach (var c in characters)
+            {
+                tran.InsertOrReplace(c);
+            }
+        });
     }
 
     public async Task<Character?> GetCharacterAsync(string key)
     {
-        await Init();
-        return await _database.Table<Character>().FirstOrDefaultAsync(c => c.CharacterKey == key);
+        var db = await GetConnectionAsync();
+        return await db.Table<Character>().FirstOrDefaultAsync(c => c.CharacterKey == key);
     }
 
     public async Task<MythicPlusSummary?> GetMythicPlusSummaryAsync(string characterKey)
     {
-        await Init();
-        return await _database.Table<MythicPlusSummary>().FirstOrDefaultAsync(s => s.CharacterKey == characterKey);
+        var db = await GetConnectionAsync();
+        return await db.Table<MythicPlusSummary>().FirstOrDefaultAsync(s => s.CharacterKey == characterKey);
     }
 
     public async Task SaveMythicPlusSummaryAsync(MythicPlusSummary summary)
     {
-        await Init();
-        await _database.InsertOrReplaceAsync(summary);
+        var db = await GetConnectionAsync();
+        await db.InsertOrReplaceAsync(summary);
     }
 
     public async Task<WeeklyChecklist> GetWeeklyChecklistAsync(string characterKey)
     {
-        await Init();
-        var item = await _database.Table<WeeklyChecklist>().FirstOrDefaultAsync(c => c.CharacterKey == characterKey);
+        var db = await GetConnectionAsync();
+        var item = await db.Table<WeeklyChecklist>().FirstOrDefaultAsync(c => c.CharacterKey == characterKey);
         if (item == null)
         {
             item = new WeeklyChecklist { CharacterKey = characterKey };
-            await _database.InsertAsync(item);
+            await db.InsertAsync(item);
         }
         return item;
     }
 
     public async Task SaveWeeklyChecklistAsync(WeeklyChecklist checklist)
     {
-        await Init();
-        checklist.LastUpdated = System.DateTimeOffset.UtcNow;
-        await _database.InsertOrReplaceAsync(checklist); // Update doesn't work if ID is 0 and existing. But here we fetch first.
-        // Actually InsertOrReplace works based on PK.
-        // But Checklist has ID PK. CharacterKey is just a field.
-        // If I fetch by Key, I get the ID.
-        // So Update is fine.
-        await _database.UpdateAsync(checklist);
+        var db = await GetConnectionAsync();
+        checklist.LastUpdated = DateTimeOffset.UtcNow;
+        await db.UpdateAsync(checklist);
     }
+}
+
+public class AsyncLazy<T> : Lazy<Task<T>>
+{
+    public AsyncLazy(Func<T> valueFactory) :
+        base(() => Task.Factory.StartNew(valueFactory)) { }
+
+    public AsyncLazy(Func<Task<T>> taskFactory) :
+        base(() => Task.Factory.StartNew(taskFactory).Unwrap()) { }
 }

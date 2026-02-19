@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Maui.Controls;
 using WoWInsight.Mobile.DTOs;
 using WoWInsight.Mobile.Models;
 using WoWInsight.Mobile.Services;
@@ -12,8 +13,8 @@ namespace WoWInsight.Mobile.ViewModels;
 [QueryProperty(nameof(Character), "Character")]
 public partial class CharacterDetailViewModel : ObservableObject
 {
-    private readonly LocalDbService _localDb;
-    private readonly SyncService _syncService;
+    private readonly ILocalDbService _localDb;
+    private readonly ISyncService _syncService;
 
     [ObservableProperty]
     Character character;
@@ -30,7 +31,7 @@ public partial class CharacterDetailViewModel : ObservableObject
     [ObservableProperty]
     bool isRefreshing;
 
-    public CharacterDetailViewModel(LocalDbService localDb, SyncService syncService)
+    public CharacterDetailViewModel(ILocalDbService localDb, ISyncService syncService)
     {
         _localDb = localDb;
         _syncService = syncService;

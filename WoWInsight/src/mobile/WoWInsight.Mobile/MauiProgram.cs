@@ -22,10 +22,31 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
+        // Config & Auth
+        builder.Services.AddSingleton<IAppConfig, AppConfig>();
+        builder.Services.AddSingleton<ISecureStorageService, SecureStorageService>();
+        builder.Services.AddSingleton<IAuthService, AuthService>();
+
         // Services
-        builder.Services.AddSingleton<LocalDbService>();
-        builder.Services.AddSingleton<BackendApiClient>();
-        builder.Services.AddSingleton<SyncService>();
+        builder.Services.AddSingleton<ILocalDbService, LocalDbService>();
+
+        // HttpClient registration
+        builder.Services.AddHttpClient<IBackendApiClient, BackendApiClient>((serviceProvider, client) =>
+        {
+            var config = serviceProvider.GetRequiredService<IAppConfig>();
+            client.BaseAddress = new Uri(config.ApiBaseUrl);
+        })
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+            // Ignore SSL errors for development (localhost self-signed)
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+            return handler;
+        });
+
+        builder.Services.AddSingleton<ISyncService, SyncService>();
+        builder.Services.AddSingleton<IDialogService, DialogService>();
+        builder.Services.AddSingleton<INavigationService, NavigationService>();
 
         // ViewModels
         builder.Services.AddTransient<LoginViewModel>();
