@@ -58,4 +58,8 @@
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\WoWInsight.Mobile.Core\WoWInsight.Mobile.Core.csproj" />
+	</ItemGroup>
+
 </Project>

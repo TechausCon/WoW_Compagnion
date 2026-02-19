@@ -10,11 +10,13 @@ namespace WoWInsight.Mobile.ViewModels;
 
 public partial class LoginViewModel : ObservableObject
 {
-    private readonly BackendApiClient _apiClient;
+    private readonly IBackendApiClient _apiClient;
+    private readonly IAuthService _authService;
 
-    public LoginViewModel(BackendApiClient apiClient)
+    public LoginViewModel(IBackendApiClient apiClient, IAuthService authService)
     {
         _apiClient = apiClient;
+        _authService = authService;
     }
 
     [RelayCommand]
@@ -33,10 +35,10 @@ public partial class LoginViewModel : ObservableObject
 
     public async Task CheckLoginStatusAsync()
     {
-        var token = await _apiClient.GetTokenAsync();
-        if (!string.IsNullOrEmpty(token))
+        if (await _authService.GetTokenAsync() != null)
         {
             // Already logged in
+            // Use GoToAsync to navigate to main page
             await Shell.Current.GoToAsync("//main/characters");
         }
     }

@@ -1,28 +1,32 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using WoWInsight.Mobile.DTOs;
 using WoWInsight.Mobile.Models;
 
 namespace WoWInsight.Mobile.Services;
 
-public class SyncService
+public class SyncService : ISyncService
 {
-    private readonly BackendApiClient _apiClient;
-    private readonly LocalDbService _localDb;
+    private readonly IBackendApiClient _apiClient;
+    private readonly ILocalDbService _localDb;
 
-    public SyncService(BackendApiClient apiClient, LocalDbService localDb)
+    public SyncService(IBackendApiClient apiClient, ILocalDbService localDb)
     {
         _apiClient = apiClient;
         _localDb = localDb;
     }
 
-    public async Task SyncCharactersAsync()
+    public async Task<bool> SyncCharactersAsync()
     {
         try
         {
             var dtos = await _apiClient.GetCharactersAsync();
-            var entities = new System.Collections.Generic.List<Character>();
+            var entities = new List<Character>();
 
             foreach (var dto in dtos)
             {
@@ -40,27 +44,33 @@ public class SyncService
 
             await _localDb.SaveCharactersAsync(entities);
 
-            // Trigger sync for each char summary? Or separate?
-            // Prompt: "Danach Background Refresh: /me/characters -> upsert ... pro Charakter ... -> upsert"
-            // So we should iterate and sync M+ summary too.
-            foreach (var c in entities)
+            // Parallel fetching of Mythic+ data with throttling
+            using var semaphore = new SemaphoreSlim(5); // Limit concurrency
+            var tasks = entities.Select(async c =>
             {
-                // Fire and forget or sequential?
-                // Sequential to avoid slamming backend/raider.io rate limits if any (though backend caches).
+                await semaphore.WaitAsync();
                 try
                 {
                     await SyncMythicPlusAsync(c.CharacterKey);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore individual failures
+                    Console.WriteLine($"Failed to sync M+ for {c.CharacterKey}: {ex.Message}");
+                    // Continue despite error
                 }
-            }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+            return true;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Sync failed (offline?)
-            // We just stop. Local DB has old data.
+            Console.WriteLine($"Sync failed: {ex.Message}");
+            return false;
         }
     }
 

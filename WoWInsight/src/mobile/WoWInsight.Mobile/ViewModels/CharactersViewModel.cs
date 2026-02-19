@@ -11,8 +11,10 @@ namespace WoWInsight.Mobile.ViewModels;
 
 public partial class CharactersViewModel : ObservableObject
 {
-    private readonly LocalDbService _localDb;
-    private readonly SyncService _syncService;
+    private readonly ILocalDbService _localDb;
+    private readonly ISyncService _syncService;
+    private readonly IDialogService _dialogService;
+    private readonly INavigationService _navigationService;
 
     [ObservableProperty]
     ObservableCollection<Character> characters = new();
@@ -20,21 +22,32 @@ public partial class CharactersViewModel : ObservableObject
     [ObservableProperty]
     bool isRefreshing;
 
-    public CharactersViewModel(LocalDbService localDb, SyncService syncService)
+    [ObservableProperty]
+    bool isBusy;
+
+    public CharactersViewModel(ILocalDbService localDb, ISyncService syncService, IDialogService dialogService, INavigationService navigationService)
     {
         _localDb = localDb;
         _syncService = syncService;
+        _dialogService = dialogService;
+        _navigationService = navigationService;
     }
 
     public async Task InitializeAsync()
     {
-        await LoadLocalDataAsync();
-        // Trigger background sync if empty or just always?
-        // Prompt says "Background Refresh".
-        // Let's trigger refresh on init.
-        IsRefreshing = true;
-        await RefreshAsync();
-        IsRefreshing = false;
+        IsBusy = true;
+        try
+        {
+            await LoadLocalDataAsync();
+            if (Characters.Count == 0)
+            {
+                await RefreshAsync();
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private async Task LoadLocalDataAsync()
@@ -53,7 +66,11 @@ public partial class CharactersViewModel : ObservableObject
         IsRefreshing = true;
         try
         {
-            await _syncService.SyncCharactersAsync();
+            var success = await _syncService.SyncCharactersAsync();
+            if (!success)
+            {
+                await _dialogService.DisplayAlertAsync("Sync Error", "Failed to synchronize characters. Please check your connection.", "OK");
+            }
             await LoadLocalDataAsync();
         }
         finally
@@ -71,6 +88,6 @@ public partial class CharactersViewModel : ObservableObject
         {
             { "Character", character }
         };
-        await Shell.Current.GoToAsync($"{nameof(CharacterDetailPage)}", navigationParameter);
+        await _navigationService.GoToAsync($"{nameof(CharacterDetailPage)}", navigationParameter);
     }
 }

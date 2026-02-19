@@ -5,29 +5,39 @@
              x:Class="WoWInsight.Mobile.Views.WeeklyChecklistPage"
              Title="Weekly Checklist">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="15" Padding="15" BindableLayout.ItemsSource="{Binding CharacterChecklists}">
-            <BindableLayout.ItemTemplate>
-                <DataTemplate x:DataType="vm:CharacterChecklist">
-                    <Frame Padding="15">
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="{Binding Character.Name}" FontSize="18" FontAttributes="Bold" />
-                            <Label Text="{Binding Character.Realm}" TextColor="Gray" />
+    <Grid>
+        <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+            <ScrollView>
+                <VerticalStackLayout Spacing="15" Padding="15" BindableLayout.ItemsSource="{Binding CharacterChecklists}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CharacterChecklist">
+                            <Frame Padding="15">
+                                <VerticalStackLayout Spacing="10">
+                                    <Label Text="{Binding Character.Name}" FontSize="18" FontAttributes="Bold" />
+                                    <Label Text="{Binding Character.Realm}" TextColor="Gray" />
 
-                            <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto, Auto">
-                                <Label Grid.Row="0" Grid.Column="0" Text="Weekly Chest" VerticalOptions="Center" />
-                                <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding IsWeeklyChestDone}" />
+                                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto, Auto">
+                                        <Label Grid.Row="0" Grid.Column="0" Text="Weekly Chest" VerticalOptions="Center" />
+                                        <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding IsWeeklyChestDone}" />
 
-                                <Label Grid.Row="1" Grid.Column="0" Text="Raid Clear" VerticalOptions="Center" />
-                                <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding IsRaidDone}" />
+                                        <Label Grid.Row="1" Grid.Column="0" Text="Raid Clear" VerticalOptions="Center" />
+                                        <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding IsRaidDone}" />
 
-                                <Label Grid.Row="2" Grid.Column="0" Text="World Boss" VerticalOptions="Center" />
-                                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding IsWorldBossDone}" />
-                            </Grid>
-                        </VerticalStackLayout>
-                    </Frame>
-                </DataTemplate>
-            </BindableLayout.ItemTemplate>
-        </VerticalStackLayout>
-    </ScrollView>
+                                        <Label Grid.Row="2" Grid.Column="0" Text="World Boss" VerticalOptions="Center" />
+                                        <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding IsWorldBossDone}" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Frame>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                           IsVisible="{Binding IsBusy}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Color="{StaticResource Primary}" />
+    </Grid>
 </ContentPage>
