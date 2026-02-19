@@ -40,21 +40,21 @@ public class TokenStore : ITokenStore
         await _context.SaveChangesAsync();
     }
 
-    public async Task<(string AccessToken, string RefreshToken)> GetTokenAsync(Guid userAccountId)
+    public async Task<(string AccessToken, string RefreshToken, DateTimeOffset ExpiresAt)> GetTokenAsync(Guid userAccountId)
     {
         var token = await _context.OAuthTokens.FirstOrDefaultAsync(t => t.UserAccountId == userAccountId);
-        if (token == null) return (string.Empty, string.Empty);
+        if (token == null) return (string.Empty, string.Empty, DateTimeOffset.MinValue);
 
         try
         {
             var accessToken = _protector.Unprotect(token.EncryptedAccessToken);
             var refreshToken = _protector.Unprotect(token.EncryptedRefreshToken);
-            return (accessToken, refreshToken);
+            return (accessToken, refreshToken, token.ExpiresAt);
         }
         catch
         {
             // Decryption failed (maybe key rotated/lost)
-            return (string.Empty, string.Empty);
+            return (string.Empty, string.Empty, DateTimeOffset.MinValue);
         }
     }
 
@@ -73,14 +73,7 @@ public class TokenStore : ITokenStore
         var request = new PkceRequest
         {
             State = state,
-            CodeVerifier = codeVerifier, // Ideally encrypt this too, but for MVP plain is ok as per plan reflection. Wait, prompt said "verifier nur serverseitig". Storing plain is serverside.
-            // I'll encrypt it just to be safe and consistent.
-            // Actually, I'll store it plain to match my earlier thought unless I change it now.
-            // I defined `CodeVerifier` as string. I can store encrypted string there.
-            // But if I store encrypted, I must decrypt before sending to Blizzard.
-            // I'll encrypt it.
-            // Wait, I didn't change the property name to `EncryptedCodeVerifier`.
-            // I'll just store it plain for now as it's short lived and internal.
+            CodeVerifier = codeVerifier,
             Region = region,
             CreatedAt = DateTimeOffset.UtcNow,
             ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10) // 10 min expiry for login

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels"
-             xmlns:models="clr-namespace:WoWInsight.Mobile.Models"
+             xmlns:vm="clr-namespace:WoWInsight.Mobile.ViewModels;assembly=WoWInsight.Mobile.Core"
+             xmlns:models="clr-namespace:WoWInsight.Mobile.Models;assembly=WoWInsight.Mobile.Core"
              x:Class="WoWInsight.Mobile.Views.CharactersPage"
              Title="Characters"
              BackgroundColor="{StaticResource WoWDarkBackground}">

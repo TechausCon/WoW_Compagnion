@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using WoWInsight.Application.DTOs;
 using WoWInsight.Application.Services;
 
 namespace WoWInsight.Api.Controllers;
@@ -40,25 +41,33 @@ public class AuthController : ControllerBase
 
         try
         {
-            // Handle callback and get backend JWT
-            var backendToken = await _authService.HandleCallbackAsync(code, state);
+            // Handle callback and get backend JWT + Refresh
+            var (backendToken, refreshToken) = await _authService.HandleCallbackAsync(code, state);
 
             // Redirect to Deep Link
-            // Scheme: wowinsight://
-            // Route: wowinsight://auth/callback?token=...
-            var deepLink = $"wowinsight://auth/callback?token={backendToken}";
-
-            // We can return a redirect to the deep link directly.
-            // But browsers might show a warning or not redirect if schemes are unknown.
-            // Usually, we render a simple HTML page that does window.location = ...
-            // Or just return Redirect().
-            // Modern browsers handle custom scheme redirects well if app is installed.
+            var deepLink = $"wowinsight://auth/callback?token={backendToken}&refreshToken={refreshToken}";
 
             return Redirect(deepLink);
         }
         catch (Exception ex)
         {
             return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+    {
+        if (string.IsNullOrEmpty(request.RefreshToken)) return BadRequest("Refresh token required.");
+
+        try
+        {
+            var (access, refresh) = await _authService.RefreshTokenAsync(request.RefreshToken);
+            return Ok(new TokenResponse { AccessToken = access, RefreshToken = refresh });
+        }
+        catch (Exception ex)
+        {
+            return Unauthorized(new { error = ex.Message });
         }
     }
 }

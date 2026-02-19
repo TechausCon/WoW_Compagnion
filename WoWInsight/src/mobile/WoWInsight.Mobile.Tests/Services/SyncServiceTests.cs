@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Moq;
@@ -65,10 +66,12 @@ public class SyncServiceTests
 
         // Assert
         Assert.True(result); // Overall sync is success (as defined in SyncService implementation)
+
+        // Ensure both were attempted
         _apiClientMock.Verify(client => client.GetMythicPlusSummaryAsync("c1"), Times.Once);
         _apiClientMock.Verify(client => client.GetMythicPlusSummaryAsync("c2"), Times.Once);
+
         // Ensure db save was called for M+ summary only for c2 (c1 failed before saving M+)
-        // Wait, SyncMythicPlusAsync saves to DB. If GetMythicPlusSummaryAsync throws, DB save is skipped.
         _localDbMock.Verify(db => db.SaveMythicPlusSummaryAsync(It.Is<MythicPlusSummary>(s => s.CharacterKey == "c2")), Times.Once);
         _localDbMock.Verify(db => db.SaveMythicPlusSummaryAsync(It.Is<MythicPlusSummary>(s => s.CharacterKey == "c1")), Times.Never);
     }

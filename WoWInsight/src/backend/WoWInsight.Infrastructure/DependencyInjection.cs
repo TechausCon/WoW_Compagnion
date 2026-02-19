@@ -25,18 +25,6 @@ public static class DependencyInjection
 
         // Data Protection
         services.AddDataProtection()
-            .PersistKeysToDbContext<AppDbContext>();
-            // Wait, PersistKeysToDbContext requires 'Microsoft.AspNetCore.DataProtection.EntityFrameworkCore' package.
-            // And AppDbContext needs to implement IDataProtectionKeyContext.
-            // But I didn't add that package.
-            // The prompt said: "Nutze IDataProtector (ASP.NET Core Data Protection) für Token-Verschlüsselung."
-            // "Backend optional SQLite für Session/Token".
-            // If I use PersistKeysToFileSystem, it works if running in container with volume.
-            // Or I can use simple ephemeral keys for MVP if restart is okay (session lost).
-            // But prompt asks for production-near vertical slice.
-            // I'll use FileSystem persistence to a local folder "./keys".
-
-        services.AddDataProtection()
             .PersistKeysToFileSystem(new System.IO.DirectoryInfo("./keys"))
             .SetApplicationName("WoWInsight");
 
@@ -64,9 +52,6 @@ public static class DependencyInjection
         return HttpPolicyExtensions
             .HandleTransientHttpError()
             .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
-            // Wait, NotFound should NOT retry usually.
-            // Prompt: "Retry (z. B. 2x) nur bei transient errors".
-            // So default HandleTransientHttpError is correct (5xx, 408).
             .WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
     }
 }
